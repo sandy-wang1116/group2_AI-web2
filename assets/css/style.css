@@ -1,0 +1,35 @@
+:root{--ink:#1c2a26;--paper:#f6f7f4;--card:#fff;--line:#d8dfda;--green:#0a5c47;--amber:#b4741a;--mute:#5d6b66}
+@media(prefers-color-scheme:dark){:root{--ink:#e8eeeb;--paper:#14201c;--card:#1b2a25;--line:#33463f;--green:#4fb597;--amber:#e0a04a;--mute:#9db0a8}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.7 "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+.top{background:var(--green);color:#fff;padding:28px 20px}.top h1{margin:0 0 4px;font-size:1.6rem}.top p{margin:0;opacity:.9}
+main{max-width:980px;margin:0 auto;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px;margin-bottom:18px}
+h2{margin:0 0 12px;font-size:1.2rem}h3{margin:20px 0 8px;font-size:1.05rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:8px}
+label{display:flex;flex-direction:column;gap:4px;font-size:.92rem;color:var(--mute)}
+input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink);width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--green);outline-offset:1px}
+input.bad{border-color:#c0392b}
+.seg{display:flex;margin-top:4px}.seg button{flex:1;padding:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+.seg button:first-child{border-radius:4px 0 0 4px}.seg button:last-child{border-radius:0 4px 4px 0;border-left:0}
+.seg button.on{background:var(--green);color:#fff;border-color:var(--green)}
+details{margin-top:14px}summary{cursor:pointer;color:var(--green)}
+.hint{margin:0 0 8px;color:var(--mute);font-size:.9rem}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left}th{font-weight:600;color:var(--mute);font-size:.9rem}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{font-weight:700;border-top:2px solid var(--ink)}
+td.fixed{font-weight:600}
+button.ghost{background:none;border:1px solid var(--line);color:var(--ink);padding:8px 14px;border-radius:4px;font:inherit;cursor:pointer;margin-top:10px}
+button.primary{background:var(--green);color:#fff;border:0;padding:12px 32px;border-radius:4px;font:inherit;font-weight:700;cursor:pointer}
+button.del{margin:0;padding:4px 10px}
+.actions{display:flex;gap:12px;align-items:center;margin-bottom:10px}.actions .ghost{margin:0}
+#msg{color:#c0392b;min-height:1.5em;margin:0 0 12px}
+#cmp td:not(:first-child),#cmp th:not(:first-child){text-align:right}
+#cmp tr.key td{font-weight:700;background:rgba(10,92,71,.08)}
+.best{color:var(--green)}.worse{color:#c0392b}
+#chart svg{width:100%;height:auto}
+#detail{font-size:.9rem;color:var(--mute)}#detail p{margin:6px 0}
+footer{max-width:980px;margin:0 auto;padding:10px 20px 40px;color:var(--mute);font-size:.85rem}
