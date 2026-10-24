@@ -1,95 +1,76 @@
 (function(){
 'use strict';
-var T=window.TAX,$=function(i){return document.getElementById(i)},MAX=10;
-var spouse=true,rowId=0;
+var T=window.TAX,$=function(i){return document.getElementById(i)},st={sp:1,q1:1,q2:1};
 function fmt(n){return n.toLocaleString('zh-TW',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function num(v){var n=parseFloat(String(v).replace(/,/g,''));return isFinite(n)?n:NaN}
-// 只允許數字輸入
-document.addEventListener('input',function(e){var t=e.target;if(t.hasAttribute&&t.hasAttribute('data-num')){var dec=t.getAttribute('inputmode')==='decimal';t.value=t.value.replace(dec?/[^\d.]/g:/\D/g,'');t.classList.remove('bad');if(t.closest('#assets'))sum()}});
-function tog(y){spouse=y;$('sp-yes').classList.toggle('on',y);$('sp-no').classList.toggle('on',!y);$('sp-yes').setAttribute('aria-pressed',y);$('sp-no').setAttribute('aria-pressed',!y)}
-$('sp-yes').onclick=function(){tog(true)};$('sp-no').onclick=function(){tog(false)};
-function addRow(name,amt,fixed){
- var tb=document.querySelector('#assets tbody');if(tb.rows.length>=MAX)return;
- var tr=document.createElement('tr');tr.dataset.id=++rowId;
- tr.innerHTML='<td'+(fixed?' class="fixed">'+name:'><input class="nm" type="text" value="'+(name||'')+'" placeholder="資產名稱">')+'</td>'+
- '<td><input class="amt" type="text" inputmode="decimal" data-num value="'+(amt||'')+'"></td>'+
- '<td><select class="cur"><option value="TWD">新台幣</option><option value="USD">美金</option><option value="JPY">日圓</option><option value="OTH">其他</option></select></td>'+
- '<td class="rt">—</td><td class="num tw">0.00</td><td>'+(fixed?'':'<button type="button" class="ghost del" aria-label="刪除此列">刪除</button>')+'</td>';
- tb.appendChild(tr);
- tr.querySelector('.cur').onchange=function(){var c=this.value,td=tr.querySelector('.rt');
-  if(c==='TWD')td.textContent='—';else{td.innerHTML='<input class="rate" type="text" inputmode="decimal" data-num value="'+(c==='USD'?T.defaults.usd:c==='JPY'?T.defaults.jpy:'')+'" placeholder="輸入匯率">'}sum()};
- var d=tr.querySelector('.del');if(d)d.onclick=function(){tr.remove();sum();btn()};
- sum();btn();
-}
-function btn(){$('add').disabled=document.querySelector('#assets tbody').rows.length>=MAX}
-function rows(){var out=[],ok=true;document.querySelectorAll('#assets tbody tr').forEach(function(tr){
- var a=num(tr.querySelector('.amt').value),c=tr.querySelector('.cur').value,r=1;
- if(c!=='TWD'){var ri=tr.querySelector('.rate');r=num(ri.value);if(!(r>0)){ok=false;ri.classList.add('bad')}}
- if(isNaN(a)){a=0}
- out.push({tw:a*r})});return{rows:out,ok:ok}}
-function sum(){var tot=0;document.querySelectorAll('#assets tbody tr').forEach(function(tr){
- var a=num(tr.querySelector('.amt').value)||0,c=tr.querySelector('.cur').value,r=1;
- if(c!=='TWD'){r=num(tr.querySelector('.rate').value)||0}
- var v=a*r;tr.querySelector('.tw').textContent=fmt(v);tot+=v});$('total').textContent=fmt(tot);return tot}
-$('add').onclick=function(){addRow('',''  )};
-function init(){document.querySelector('#assets tbody').innerHTML='';rowId=0;
- addRow('信託本金','4000',true);addRow('公司股權','8000');addRow('不動產','5000');addRow('投資金融商品','3000');
- var n=document.querySelectorAll('#assets .nm');['公司股權','不動產','投資金融商品'].forEach(function(s,i){n[i].value=s});}
-$('reset').onclick=function(){init();['age','adult','minor'].forEach(function(i){$(i).value=''});$('age').value='58';$('adult').value='2';$('minor').value='0';tog(true);$('result').hidden=true;$('msg').textContent=''};
-// 稅額：超額累進（單位：萬元）
-function tax(net,B){if(net<=0)return 0;for(var i=0;i<B.length;i++){if(net<=B[i].upTo||i===B.length-1){var lo=i?B[i-1].upTo:0;return B[i].base+(net-lo)*B[i].rate}}}
-function giftTax(v){var net=Math.max(0,v-T.gift.exemption);return{net:net,tax:tax(net,T.gift.brackets)}}
-function estTax(gross,ded){var net=Math.max(0,gross-ded);return{net:net,tax:tax(net,T.estate.brackets)}}
+$('rate').value='';
+document.addEventListener('input',function(e){var t=e.target;if(t.hasAttribute&&t.hasAttribute('data-num')){var dec=t.getAttribute('inputmode')==='decimal';t.value=t.value.replace(dec?/[^\d.]/g:/\D/g,'');t.classList.remove('bad');heirs()}});
+function sync(){$('q2wrap').hidden=!st.q1;$('pwrap').hidden=!(st.q1&&st.q2)}
+function itax(net){if(net<=0)return 0;var B=T.income.brackets;for(var i=0;i<B.length;i++){if(net<=B[i].upTo||i===B.length-1)return net*B[i].rate-B[i].diff}}
+function heirs(){$('heirs').textContent=((num($('kids').value)||0)+st.sp)+' 人'}
+document.querySelectorAll('.seg').forEach(function(g){g.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+ g.querySelectorAll('button').forEach(function(x){x.classList.toggle('on',x===b)});st[g.dataset.t]=+b.dataset.v;sync();heirs()})});
+$('cur').onchange=function(){var c=this.value;$('rwrap').hidden=c==='TWD';$('rate').value=c==='USD'?T.defaults.usd:c==='JPY'?T.defaults.jpy:''};
+function tax(net){if(net<=0)return 0;var B=T.gift.brackets;for(var i=0;i<B.length;i++){if(net<=B[i].upTo||i===B.length-1){return B[i].base+(net-(i?B[i-1].upTo:0))*B[i].rate}}}
+function gift(v){var net=Math.max(0,v-T.gift.exemption);return{net:net,tax:tax(net)}}
 function calc(){
- var msg=$('msg');msg.textContent='';
- var age=num($('age').value),ad=num($('adult').value),mi=num($('minor').value),n=+$('years').value,
- pay=num($('pay').value),r=num($('rate').value)/100,my=num($('minyrs').value)||0;
- if([age,ad,mi].some(isNaN)){msg.textContent='請完整輸入年齡、成年子女與未成年子女人數（僅限數字，無則填 0）。';return}
- if(!(r>0)||isNaN(pay)){msg.textContent='請確認進階假設中的折現利率與固定給付金額。';return}
- var R=rows();if(!R.ok){msg.textContent='非新台幣資產請輸入有效匯率（標示紅框處）。';return}
- var total=sum(),P=R.rows[0].tw;
- if(total<=0||P<=0){msg.textContent='請輸入信託本金與資產金額（須大於 0）。';return}
- if(pay*n>P){msg.textContent='傳富久久：每年給付 × 信託期間不可超過信託本金，請調整固定給付金額。';return}
- var E=T.estate,v=Math.pow(1+r,-n),pvP=P*v,pvPay=pay*(1-v)/r;
- var ded=E.exemption+E.funeral+(spouse?E.spouse:0)+(ad+mi)*E.child+mi*my*E.minorExtraPerYear;
- var base=estTax(total,ded),out=estTax(total-P,ded);
- var gv={a:pvP,b:P-pvP,c:Math.max(0,P-pvPay)};
- var g={a:giftTax(gv.a),b:giftTax(gv.b),c:giftTax(gv.c)};
- var S=[
- {k:'none',name:'不使用信託',inv:0,gift:0,own:'原有資產由繼承程序處理',left:null,est:base.tax,eg:total,en:base.net,gv:null},
- {k:'a',name:'傳富發我',inv:P,gift:g.a.tax,own:'子女取得本金',left:P,est:out.tax,eg:total-P,en:out.net,gv:gv.a,gn:g.a.net},
- {k:'b',name:'傳富發發',inv:P,gift:g.b.tax,own:'林先生取得本金'.replace('林先生','委託人'),left:P,est:base.tax,eg:total,en:base.net,gv:gv.b,gn:g.b.net},
- {k:'c',name:'傳富久久',inv:P,gift:g.c.tax,own:'子女取得剩餘金額',left:P-pay*n,est:out.tax,eg:total-P,en:out.net,gv:gv.c,gn:g.c.net}];
- S.forEach(function(s){s.sum=s.est+s.gift;s.diff=s.sum-S[0].est});
- render(S,n,age,total,P,ded,pay,r,pvPay,spouse,ad,mi);
-}
-function render(S,n,age,total,P,ded,pay,r,pvPay){
- var best=S.reduce(function(a,b){return b.sum<a.sum?b:a});
- var h='<thead><tr><th>比較項目</th>'+S.map(function(s){return'<th>'+s.name+'</th>'}).join('')+'</tr></thead><tbody>';
- function row(l,f,cls){return'<tr'+(cls?' class="'+cls+'"':'')+'><td>'+l+'</td>'+S.map(f).map(function(x){return'<td>'+x+'</td>'}).join('')+'</tr>'}
+ var m=$('msg');m.textContent='';
+ var a=num($('amt').value),c=$('cur').value,r=1,n=+$('years').value,d=num($('disc').value)/100,y=num($('yld').value)/100,k=num($('kids').value),q1=st.q1===1,q2=q1&&st.q2===1,pay=q2?num($('pay').value):0;
+ if(c!=='TWD'){r=num($('rate').value);if(!(r>0)){$('rate').classList.add('bad');m.textContent='請輸入有效匯率。';return}}
+ if(!(a>0)){m.textContent='請輸入信託資產規模（須大於 0）。';return}
+ if(isNaN(k)||isNaN(y)||isNaN(pay)||!(d>0)){m.textContent='請完整輸入子女人數、折現利率、配息率與自留生活費（僅限數字，無則填 0）。';return}
+ if(!q1&&k<1){m.textContent='本金不給子女時，孳息由子女取得，子女人數至少須為 1。';return}
+ if(q2&&!(pay>0)){m.textContent='請輸入每年自留固定生活費（須大於 0），或將該項改為「否」。';return}
+ var P=a*r;
+ if(pay*n>P){m.textContent='每年自留生活費 × 信託期間不可超過信託本金，請調整。';return}
+ var v=Math.pow(1+d,-n),pvPay=pay*(1-v)/d,Y=P*y,yi=Y*n,S,I=T.income;
+ if(!q1){
+  var ni=Math.max(0,Y/k-I.exemption-I.standard),g=gift(P-P*v),g0=tax(Math.max(0,Y-T.gift.exemption));
+  S=[{name:'不使用信託',alt:'（每年贈與孳息給子女）',inv:0,gv:n*Y,gtax:n*g0,itax:n*Y*I.settlorRate,own:'委託人保有本金',flow:'孳息歸子女，約 '+fmt(yi)},
+     {name:'傳富發發 (88)',inv:P,gv:P-P*v,gtax:g.tax,itax:n*k*itax(ni),own:'委託人取得本金',flow:'孳息歸子女，約 '+fmt(yi)}];
+ }else{
+  var G0=q2?P+yi-pay*n:P,h0=gift(G0),gv=q2?Math.max(0,P-pvPay):P*v,g1=gift(gv);
+  S=[{name:'不使用信託',alt:q2?'（一次贈與剩餘本金）':'（一次贈與本金）',inv:0,gv:G0,net:h0.net,gtax:h0.tax,itax:0,own:q2?'子女一次取得剩餘本金':'子女一次取得本金',left:null,flow:'不適用'},
+     {name:q2?'傳富久久 (99)':'傳富發我 (85)',inv:P,gv:gv,net:g1.net,gtax:g1.tax,itax:0,own:q2?'子女取得剩餘金額':'子女取得本金',left:q2?G0:P,flow:q2?'每年給付委託人 '+fmt(pay)+'，共 '+fmt(pay*n):'孳息歸委託人，約 '+fmt(yi)}];
+ }
+ S.forEach(function(s){s.tax=s.gtax+s.itax});
+ var mn=Math.min(S[0].tax,S[1].tax),best=S.filter(function(s){return s.tax-mn<0.005}),b0=S[0];
+ var cmpTxt=best.indexOf(b0)>=0?'':'，較不使用信託'+(b0.tax>=mn?'節省 '+fmt(b0.tax-mn):'多繳 '+fmt(mn-b0.tax))+' 萬元';
+ $('concl').innerHTML=(best.length>1?'稅額相同，皆適合：':'最適合您的方案：')+best.map(function(s){return s.name}).join('、')+'<small>預估應繳稅額最低，為 '+fmt(mn)+' 萬元（NT$ '+Math.round(mn*10000).toLocaleString('zh-TW')+' 元）'+cmpTxt+'。各方案本金歸屬不同，請搭配客戶需求說明。</small>';
+ $('ctitle').textContent=q1?'預估贈與稅比較':'預估應繳稅額比較（贈與稅＋所得稅）';
+ var h='<thead><tr><th>比較項目</th>'+S.map(function(s){return'<th>'+s.name+(s.alt?'<br><small>'+s.alt+'</small>':'')+'</th>'}).join('')+'</tr></thead><tbody>';
+ function row(l,f,cls){return'<tr'+(cls?' class="'+cls+'"':'')+'><td>'+l+'</td>'+S.map(function(s,i){return'<td>'+f(s,i)+'</td>'}).join('')+'</tr>'}
  h+=row('投入信託本金',function(s){return s.inv?fmt(s.inv):'0'});
- h+=row('預估贈與稅',function(s){return fmt(s.gift)});
- h+=row('期滿後本金歸屬',function(s){return s.own});
- h+=row(n+' 年後本金／剩餘金額',function(s){return s.left==null?'不適用':fmt(s.left)});
- h+=row('預估遺產稅',function(s){return fmt(s.est)});
- h+=row('遺產稅＋贈與稅',function(s){return fmt(s.sum)},'key');
- h+=row('相較不使用信託的稅負差額',function(s,i){if(!i)return'—';var d=s.diff;return d>0.005?'<span class="worse">增加 '+fmt(d)+'</span>':'<span class="best">減少 '+fmt(-d)+'</span>'});
+ if(q1){
+  h+=row('贈與價值（稅基）',function(s){return fmt(s.gv)});
+  h+=row('減：贈與稅免稅額',function(s){return fmt(s.gv-s.net)});
+  h+=row('課稅贈與淨額',function(s){return fmt(s.net)});
+  h+=row('預估贈與稅',function(s){return fmt(s.gtax)},'key');
+  h+=row('期滿後本金歸屬',function(s){return s.own});
+  h+=row(n+' 年後本金／剩餘金額',function(s){return s.left==null?'不適用':fmt(s.left)});
+ }else{
+  h+=row('贈與價值合計（稅基）',function(s){return fmt(s.gv)});
+  h+=row('預估贈與稅合計',function(s){return fmt(s.gtax)});
+  h+=row('預估所得稅合計（'+n+' 年）',function(s){return fmt(s.itax)});
+  h+=row('預估應繳稅額（贈與稅＋所得稅）',function(s){return fmt(s.tax)},'key');
+  h+=row('期滿後本金歸屬',function(s){return s.own});
+ }
+ h+=row('信託期間現金流（配息率 '+(y*100).toFixed(2)+'%）',function(s){return s.flow});
+ h+=row('相較不使用信託的稅負差額',function(s,i){if(!i)return'—';var df=s.tax-b0.tax;return df>0.005?'<span class="worse">增加 '+fmt(df)+'</span>':df<-0.005?'<span class="best">減少 '+fmt(-df)+'</span>':'相同'});
  $('cmp').innerHTML=h+'</tbody>';
  chart(S,best);
- $('detail').innerHTML='<p>資產總額 '+fmt(total)+'；遺產稅免稅額與扣除額合計 '+fmt(ded)+'（含免稅額 '+T.estate.exemption+'、喪葬費 '+T.estate.funeral+'；配偶／子女依輸入計算）。</p>'+
- '<p>贈與稅免稅額 '+T.gift.exemption+'；折現利率 '+(r*100).toFixed(3)+'%；信託 '+n+' 年；信託期滿時委託人 '+(age+n)+' 歲。</p>'+
- S.slice(1).map(function(s){return'<p>'+s.name+'：他益價值 '+fmt(s.gv)+'，課稅贈與淨額 '+fmt(s.gn)+'；遺產總額 '+fmt(s.eg)+'，課稅遺產淨額 '+fmt(s.en)+'。</p>'}).join('')+
- '<p>傳富久久每年給付 '+fmt(pay)+' 之折現總和 '+fmt(pvPay)+'。</p>'+
- '<p>假設：僅本次贈與、同年度無其他合併計算之贈與；繼承發生於信託期滿後，並沿用 115 年稅制；久久之給付全數用於支出；資產以輸入金額計價（實務上不動產以公告現值、股權以淨值等評價）；未計入信託費用與投資報酬；未成年子女僅加扣所填距成年年數；傳富發發之效益主要在孳息移轉，不反映於稅額。</p>';
+ $('detail').innerHTML='<p>信託本金折合新台幣 '+fmt(P)+' 萬；信託 '+n+' 年；折現利率 '+(d*100).toFixed(3)+'%；傳承人數 '+((k||0)+st.sp)+' 人（贈與稅免稅額 '+T.gift.exemption+' 萬為「每位贈與人每年」，不因受贈人數增加；配偶不列為受贈對象）。</p>'+
+ (q1?(q2?'<p>傳富久久：每年給付 '+fmt(pay)+' 萬折現總和 '+fmt(pvPay)+' 萬；贈與價值＝本金 − 折現總和。期滿剩餘本金＝本金 '+fmt(P)+' ＋ 期間孳息 '+fmt(yi)+' － 自留生活費 '+fmt(pay*n)+' ＝ '+fmt(G0)+' 萬（兩方案同一口徑）；不使用信託以此金額一次贈與計算，傳富久久之贈與價值仍依稅法折現公式。</p>':'<p>傳富發我：贈與價值＝本金折現值；不使用信託以本金 '+fmt(P)+' 萬一次贈與計算。</p>')+'<p>此情境僅比較贈與稅，未計入所得稅。</p>':
+ '<p>不使用信託：每年孳息 '+fmt(Y)+' 萬由委託人先課所得稅（假設最高級距 '+(I.settlorRate*100)+'%），再贈與子女，每年各自適用贈與稅免稅額。</p><p>傳富發發：孳息歸子女，由 '+k+' 位子女均分，每人年所得 '+fmt(Y/k)+' 萬，扣除免稅額 '+I.exemption+'、標準扣除額 '+I.standard+' 萬（115年度）後依綜所得稅累進稅率計算，假設子女無其他收入、無其他扣除額，亦未計入儲蓄投資特別扣除。</p>')+
+ '<p>共同假設：同年度無其他合併計算之贈與；信託費用未計入；孳息以「本金 × 配息率 × 年數」簡單估算（不複利）；繼承稅未納入。</p>';
  $('result').hidden=false;$('result').scrollIntoView({behavior:'smooth'});
 }
 function chart(S,best){
- var W=720,H=340,pl=60,pb=50,pt=30,mx=Math.max.apply(null,S.map(function(s){return s.sum}))*1.15||1,
- bw=90,gap=(W-pl-4*bw)/5,ph=H-pt-pb,svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="遺產稅加贈與稅長條圖">';
+ var W=720,H=340,pl=60,pb=50,pt=30,mx=Math.max.apply(null,S.map(function(s){return s.tax}))*1.2||1,bw=90,gap=(W-pl-S.length*bw)/(S.length+1),ph=H-pt-pb,
+ svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="預估應繳稅額長條圖">';
  for(var i=0;i<=4;i++){var y=pt+ph-ph*i/4;svg+='<line x1="'+pl+'" x2="'+W+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)"/><text x="'+(pl-8)+'" y="'+(y+4)+'" text-anchor="end" font-size="12" fill="var(--mute)">'+Math.round(mx*i/4).toLocaleString()+'</text>'}
- S.forEach(function(s,i){var x=pl+gap+i*(bw+gap),h=ph*s.sum/mx,y=pt+ph-h,c=s===best?'var(--green)':(i?'var(--amber)':'var(--mute)');
-  svg+='<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+h+'" fill="'+c+'" rx="2"/><text x="'+(x+bw/2)+'" y="'+(y-6)+'" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">'+fmt(s.sum)+'</text><text x="'+(x+bw/2)+'" y="'+(H-pb+22)+'" text-anchor="middle" font-size="14" fill="var(--ink)">'+s.name+'</text>'});
- svg+='<text x="'+pl+'" y="16" font-size="12" fill="var(--mute)">單位：萬元；綠色為稅負最低方案</text></svg>';
- $('chart').innerHTML=svg}
-$('calc').onclick=calc;init();
+ S.forEach(function(s,i){var x=pl+gap+i*(bw+gap),h=ph*s.tax/mx,y=pt+ph-h,c=best.indexOf(s)>=0?'var(--green)':(i?'var(--amber)':'var(--mute)');
+  svg+='<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+Math.max(h,1)+'" fill="'+c+'" rx="2"/><text x="'+(x+bw/2)+'" y="'+(y-6)+'" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">'+fmt(s.tax)+'</text><text x="'+(x+bw/2)+'" y="'+(H-pb+22)+'" text-anchor="middle" font-size="12" fill="var(--ink)">'+s.name+'</text>'});
+ $('chart').innerHTML=svg+'<text x="'+pl+'" y="16" font-size="12" fill="var(--mute)">單位：萬元；綠色為稅額最低方案</text></svg>'}
+$('calc').onclick=calc;sync();heirs();
 })();

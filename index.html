@@ -3,49 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>傳承規劃輔助與信託情境試算</title>
+<title>信託節稅獲利雙贏模型</title>
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-<header class="top"><h1>理專傳承規劃輔助與信託情境試算</h1>
-<p>以中華民國 115 年（2026）遺產及贈與稅法規，比較未採用信託與三種信託架構的預估稅負。</p></header>
+<header class="top"><h1>信託節稅獲利雙贏模型：理專傳承規劃輔助試算</h1>
+<p>依中華民國 115 年（2026）贈與稅規定，比較未採用信託與三種信託架構的預估贈與稅。</p></header>
 <main>
 <section class="card">
-<h2>一、客戶基本資訊</h2>
+<h2>一、信託資產與條件</h2>
 <div class="grid">
-<label>年齡（歲）<input id="age" type="text" inputmode="numeric" data-num value="58"></label>
-<div>配偶<div class="seg" role="group" aria-label="配偶">
-<button type="button" id="sp-yes" class="on" aria-pressed="true">有</button><button type="button" id="sp-no" aria-pressed="false">無</button></div></div>
-<label>成年子女（人）<input id="adult" type="text" inputmode="numeric" data-num value="2"></label>
-<label>未成年子女（人）<input id="minor" type="text" inputmode="numeric" data-num value="0"></label>
+<div class="row2" style="grid-column:1/-1;max-width:520px">
+<label>信託資產規模（萬）<input id="amt" type="text" inputmode="decimal" data-num value="4000"></label>
+<label>幣別<select id="cur"><option value="TWD">新台幣</option><option value="USD">美金</option><option value="JPY">日圓</option><option value="OTH">其他</option></select></label></div>
+<label id="rwrap" hidden>匯率（1 單位兌新台幣）<input id="rate" type="text" inputmode="decimal" data-num></label>
+<label>信託期間（年）<select id="years"><option>3</option><option>5</option><option selected>10</option><option>15</option><option>20</option></select></label>
+<label>折現利率（%）郵局一年期定儲固定利率<input id="disc" type="text" inputmode="decimal" data-num value="1.725"></label>
+<label>預估商品年化配息率（%）<input id="yld" type="text" inputmode="decimal" data-num value="5"></label>
 </div>
-<details><summary>進階假設（已預設，可調整）</summary>
-<div class="grid">
-<label>信託期間（年）<select id="years"><option>5</option><option selected>10</option><option>15</option></select></label>
-<label>傳富久久每年固定給付（萬元）<input id="pay" type="text" inputmode="decimal" data-num value="300"></label>
-<label>折現利率（%）郵局一年期定儲固定利率<input id="rate" type="text" inputmode="decimal" data-num value="1.725"></label>
-<label>未成年子女距成年平均年數（選填）<input id="minyrs" type="text" inputmode="numeric" data-num value="0"></label>
-</div></details>
 </section>
 <section class="card">
-<h2>二、資產規模</h2>
-<p class="hint">金額單位為「萬」（依所選幣別）；信託本金屬資產總額的一部分。</p>
-<div class="scroll"><table id="assets"><thead><tr><th>資產名稱</th><th>金額（萬）</th><th>幣別</th><th>匯率</th><th>折合新台幣（萬）</th><th></th></tr></thead>
-<tbody></tbody>
-<tfoot><tr><td colspan="4">資產總規模</td><td id="total" class="num">0</td><td></td></tr></tfoot></table></div>
-<button type="button" id="add" class="ghost">＋ 新增資產（上限 10 列）</button>
+<h2>二、家庭與傳承意向</h2>
+<div class="grid">
+<div>配偶<div class="seg" data-t="sp"><button type="button" class="on" data-v="1">有</button><button type="button" data-v="0">無</button></div></div>
+<label>子女人數（不分成年）<input id="kids" type="text" inputmode="numeric" data-num value="2"></label>
+<div>傳承人數<div id="heirs" style="padding:8px 0;font-weight:700">3 人</div></div>
+</div>
+<div class="grid">
+<div>期滿是否將本金給子女？<div class="seg" data-t="q1"><button type="button" class="on" data-v="1">是</button><button type="button" data-v="0">否</button></div></div>
+<div id="q2wrap">期間是否自留固定生活費？<div class="seg" data-t="q2"><button type="button" class="on" data-v="1">是</button><button type="button" data-v="0">否</button></div></div>
+<label id="pwrap">每年自留固定生活費（新台幣，萬）<input id="pay" type="text" inputmode="decimal" data-num value="300"></label>
+</div>
+<p class="hint">不給子女本金：比較「不使用信託」與傳富發發（贈與稅＋所得稅）。給子女本金：不自留生活費比較傳富發我，自留生活費比較傳富久久（皆為贈與稅）。依預估應繳稅額最低者推薦。</p>
 </section>
-<div class="actions"><button type="button" id="calc" class="primary">開始計算</button><button type="button" id="reset" class="ghost">重設</button></div>
+<div class="actions"><button type="button" id="calc" class="primary">開始計算</button></div>
 <p id="msg" role="alert"></p>
 <section id="result" class="card" hidden>
+<div id="concl" class="concl"></div>
 <h2>三、架構比較（單位：萬元）</h2>
 <div class="scroll"><table id="cmp"></table></div>
-<h3>遺產稅＋贈與稅</h3>
+<h3 id="ctitle">預估應繳稅額比較</h3>
 <div id="chart"></div>
 <details><summary>計算明細與假設</summary><div id="detail"></div></details>
 </section>
 </main>
-<footer>本試算僅供初步評估與溝通，實際稅務影響須依個案、契約內容及適用法令，由專業人員確認。</footer>
+<footer>本試算僅供初步評估與溝通，實際應繳稅額及申報作業仍須依國稅局核定、最新稅務法令及信託契約規範為準。</footer>
 <script src="assets/js/tax-config.js"></script>
 <script src="assets/js/app.js"></script>
 </body>

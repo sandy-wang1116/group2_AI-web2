@@ -33,3 +33,8 @@ button.del{margin:0;padding:4px 10px}
 #chart svg{width:100%;height:auto}
 #detail{font-size:.9rem;color:var(--mute)}#detail p{margin:6px 0}
 footer{max-width:980px;margin:0 auto;padding:10px 20px 40px;color:var(--mute);font-size:.85rem}
+.concl{background:var(--green);color:#fff;padding:14px 18px;border-radius:6px;font-size:1.25rem;font-weight:700;margin-bottom:6px}
+.concl small{display:block;font-weight:400;font-size:.9rem;opacity:.92}
+.row2{display:grid;grid-template-columns:2fr 1fr;gap:10px}
+.sub{margin:18px 0 0;font-size:1rem;color:var(--mute)}
+th small{font-weight:400}
